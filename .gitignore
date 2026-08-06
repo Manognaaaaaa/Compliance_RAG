@@ -3,3 +3,4 @@
 __pycache__/
 *.pyc
 difc_chroma_db/
+difc_chunks.pkl

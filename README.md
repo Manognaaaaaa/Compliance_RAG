@@ -52,24 +52,35 @@ GROQ_API_KEY=your_groq_api_key_here
 
 ## Usage
 
-Open `compliance_rag.ipynb` and run the cells **top to bottom**:
+**1. Build the index (one-time, or whenever the source PDFs change)**
+```bash
+python ingest.py
+```
+This loads all PDFs, chunks them, persists the chunk corpus to `difc_chunks.pkl` (used for BM25), and embeds + persists the vector store to `difc_chroma_db/`.
 
-1. **Install/import cell** — installs `langchain-huggingface` / `langchain-chroma` and imports everything needed.
-2. **Ingestion cell** — loads all PDFs, chunks them (500 chars, 50 overlap), and tags each chunk with its source document name.
-3. **Embedding cell** — embeds all chunks and persists them to `./difc_chroma_db`. *Only needs to be run once* — skip it on future runs to avoid re-embedding.
-4. **Query cell** — loads the existing vector store, sets up hybrid retrieval + the Groq LLM, and answers a sample question with cited sources.
+**2. Ask questions**
+```bash
+python main.py "What are the KYC requirements for a licensed firm under DIFC regulations?"
+```
+Or run `python main.py` with no arguments for an interactive prompt loop.
 
-To ask your own question, edit the `query` variable in the last cell and re-run it.
+**3. Explore interactively (optional)**
 
-> **Note:** Cells 2–4 depend on variables defined in earlier cells (`embeddings`, `all_chunks`, `vectorstore`). If you restart the kernel, re-run from the top rather than jumping straight to the query cell.
+Open `compliance_rag.ipynb` for step-by-step exploration of ingestion, retrieval, and generation — it imports the same functions as `main.py` rather than duplicating logic. It's a scratchpad for demos, not the entry point.
 
 ## Project structure
 
 ```
 .
-├── compliance_rag.ipynb      # Main notebook — ingestion + retrieval + generation
-├── requirements.txt          # Python dependencies
-├── .env                      # GROQ_API_KEY (not committed)
-├── difc_chroma_db/           # Persisted vector store (not committed)
-└── *.pdf                     # Source regulatory documents
+├── config.py             # Shared constants (models, paths, chunking/retrieval params)
+├── ingest.py             # Load PDFs -> chunk -> embed -> persist to Chroma
+├── retrieve.py           # Hybrid (BM25 + semantic) retrieval + cross-encoder reranking
+├── generate.py           # Prompt construction + Groq LLM call
+├── main.py               # Thin CLI wiring retrieve.py + generate.py together
+├── compliance_rag.ipynb  # Exploration / demo notebook (not the entry point)
+├── requirements.txt      # Python dependencies
+├── .env                  # GROQ_API_KEY (not committed)
+├── difc_chroma_db/       # Persisted vector store (not committed)
+├── difc_chunks.pkl       # Persisted chunk corpus for BM25 (not committed)
+└── *.pdf                 # Source regulatory documents
 ```
