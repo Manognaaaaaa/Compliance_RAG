@@ -12,3 +12,5 @@ groq
 python-dotenv
 ragas==0.3.0
 pillow
+fastapi
+uvicorn[standard]

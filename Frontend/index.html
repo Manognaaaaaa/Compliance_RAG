@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compliance Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+  <div class="shell">
+    <div class="top-spacer"></div>
+
+    <div id="conversation" class="conversation" hidden></div>
+
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C6A75E" stroke-width="1.5"><path d="M12 3v18M5 7l-3 6a4 4 0 0 0 8 0l-3-6M19 7l-3 6a4 4 0 0 0 8 0l-3-6M5 7h14M5 7l7-4 7 4"/></svg>
+      </div>
+      <div class="headline">Ask about policy, precedent, or procedure.</div>
+
+      <div class="starter-grid">
+        <button type="button" class="starter-card"><span class="starter-card-text">What are the DFSA's marketing rules for financial promotions in 2024-25?</span></button>
+        <button type="button" class="starter-card"><span class="starter-card-text">What data does the DIFC Data Protection Law require us to disclose to data subjects?</span></button>
+        <button type="button" class="starter-card"><span class="starter-card-text">What are the filing requirements under the DFSA General Module?</span></button>
+        <button type="button" class="starter-card"><span class="starter-card-text">How does the DIFC Courts handle jurisdiction over commercial disputes?</span></button>
+      </div>
+    </div>
+
+    <div class="input-bar-wrap">
+      <div class="input-bar">
+        <textarea id="input" class="input-textarea" rows="1" placeholder="Ask a compliance question…"></textarea>
+        <button id="send-btn" class="send-button" type="button" disabled aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#241811" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+      <div class="disclaimer">Compliance Assistant provides informational guidance only and does not constitute legal advice. Verify all determinations with counsel.</div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

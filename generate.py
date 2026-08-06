@@ -11,7 +11,12 @@ load_dotenv()
 
 PROMPT_TEMPLATE = """You are a compliance assistant for DIFC regulations.
 Answer the question using ONLY the context below.
-Cite the document name and page number for every point you make, in the format: Source: Document Name | Page X.
+
+Give a single, direct answer first (2-4 sentences) that states the governing rule plainly.
+Then, only if relevant, note key exceptions or conditions in one short paragraph — do not
+restate the same rule twice, and do not list every retrieved passage as a separate point.
+Cite the document name and page for each distinct fact, inline, in the format
+(Source: Document Name | Page X).
 If the answer is not in the context, say "I don't have enough information."
 
 Context:
