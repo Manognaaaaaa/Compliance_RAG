@@ -22,6 +22,13 @@ from config import (
     RETRIEVER_K,
 )
 
+QUERY_REWRITE_PROMPT = """You are helping search a regulatory rulebook. Rewrite the following \
+user question into 1-2 alternative phrasings using formal regulatory/compliance terminology, \
+keeping the original question's intent. Return ONLY the rewritten query text, nothing else.
+
+Original question: {query}
+"""
+
 
 @lru_cache(maxsize=1)
 def get_embeddings():
@@ -43,6 +50,17 @@ def load_all_chunks(path=CHUNKS_PATH):
     """Load the chunk corpus persisted by ingest.py, for BM25."""
     with open(path, "rb") as f:
         return pickle.load(f)
+
+
+def rewrite_query(query, llm):
+    """Rewrite a natural-language question into the regulator's likely vocabulary
+    before retrieval, so wording mismatches (e.g. "filing" vs "submission") don't
+    tank BM25/semantic recall. One LLM call - reuse an existing ChatGroq instance."""
+    prompt = QUERY_REWRITE_PROMPT.format(query=query)
+    response = llm.invoke(prompt)
+    rewritten = response.content.strip()
+    print(f"Rewritten query: {rewritten}")
+    return rewritten
 
 
 def build_hybrid_retriever(vectorstore, all_chunks):
@@ -75,7 +93,26 @@ def rerank(query, candidates, top_n=RERANK_TOP_N):
     return [doc for _, doc in reranked[:top_n]]
 
 
-def search(retriever, query, top_n=RERANK_TOP_N):
-    """Full retrieval pipeline: hybrid search -> rerank -> top N chunks."""
+def search(retriever, query, top_n=RERANK_TOP_N, rewritten_query=None):
+    """Full retrieval pipeline: hybrid search -> rerank -> top N chunks.
+
+    If rewritten_query is given, candidates are retrieved for both the
+    original and rewritten phrasing and merged (deduped) before reranking,
+    so a regulator-vocabulary rewrite can surface chunks the user's literal
+    wording would miss. Reranking and the final answer still use the
+    original query - only retrieval sees the rewrite.
+    """
     candidates = retriever.invoke(query)
+
+    if rewritten_query and rewritten_query != query:
+        seen = {
+            (doc.metadata.get("source_doc"), doc.metadata.get("page"), doc.page_content)
+            for doc in candidates
+        }
+        for doc in retriever.invoke(rewritten_query):
+            key = (doc.metadata.get("source_doc"), doc.metadata.get("page"), doc.page_content)
+            if key not in seen:
+                seen.add(key)
+                candidates.append(doc)
+
     return rerank(query, candidates, top_n=top_n)

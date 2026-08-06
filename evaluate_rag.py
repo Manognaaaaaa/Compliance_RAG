@@ -57,6 +57,7 @@ from retrieve import (  # noqa: E402
     get_embeddings,
     load_all_chunks,
     load_vectorstore,
+    rewrite_query,
     search,
 )
 
@@ -79,7 +80,8 @@ RUN_CONFIG = RunConfig(max_workers=2, max_retries=15, max_wait=90)
 
 def run_pipeline(retriever, query):
     """Run the existing retrieval + generation pipeline for one question."""
-    top_chunks = search(retriever, query)
+    rewritten = rewrite_query(query, get_llm())
+    top_chunks = search(retriever, query, rewritten_query=rewritten)
     prompt = build_prompt(query, top_chunks)
     response = get_llm().invoke(prompt)
     contexts = [doc.page_content for doc in top_chunks]

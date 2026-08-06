@@ -27,8 +27,18 @@ EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 CHUNKS_PATH = "./difc_chunks.pkl"
 
 # Hybrid retrieval
-RETRIEVER_K = 20
-ENSEMBLE_WEIGHTS = [0.5, 0.5]
+# Bumped from 20: on a vocabulary-mismatch query ("filing" vs the DFSA's
+# "submit"/"notify"), the genuinely relevant chunk (DFSA GEN Appendix 3, page
+# 13) ranked outside the top 20 pre-rerank candidates and was invisible to
+# the reranker. Confirmed via direct comparison: top reranker score went
+# from 2.52 (K=20) to 5.04 (K=40) with two additional relevant chunks
+# entering the pool. Costs some latency (more candidates to cross-encode).
+RETRIEVER_K = 40
+# Favor semantic over BM25: BM25 contributes noise (not just "no signal") when
+# the user's wording doesn't literally appear in the source document (e.g.
+# "filing" vs the regulator's actual "submit"/"notify"), so a straight 50/50
+# split lets that noise compete with genuinely relevant semantic matches.
+ENSEMBLE_WEIGHTS = [0.3, 0.7]
 
 # Reranking
 CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"

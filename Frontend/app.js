@@ -34,6 +34,8 @@ function createUserRow(msg) {
   return row;
 }
 
+const NO_ANSWER_PATTERN = /i don't have enough information/i;
+
 function createAssistantRow(msg) {
   const row = document.createElement("div");
   row.className = "msg-row assistant";
@@ -47,7 +49,8 @@ function createAssistantRow(msg) {
   bubble.textContent = msg.text;
   column.appendChild(bubble);
 
-  if (msg.sources && msg.sources.length > 0) {
+  const isNoAnswer = NO_ANSWER_PATTERN.test(msg.text);
+  if (msg.sources && msg.sources.length > 0 && !isNoAnswer) {
     const sourcesRow = document.createElement("div");
     sourcesRow.className = "sources";
     for (const source of msg.sources) {

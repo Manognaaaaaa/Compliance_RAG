@@ -9,12 +9,13 @@ Requires the vector store to already exist - run `python ingest.py` first.
 
 import sys
 
-from generate import generate_answer
-from retrieve import build_hybrid_retriever, load_all_chunks, load_vectorstore, search
+from generate import generate_answer, get_llm
+from retrieve import build_hybrid_retriever, load_all_chunks, load_vectorstore, rewrite_query, search
 
 
 def answer(query, retriever):
-    chunks = search(retriever, query)
+    rewritten = rewrite_query(query, get_llm())
+    chunks = search(retriever, query, rewritten_query=rewritten)
     return generate_answer(query, chunks)
 
 

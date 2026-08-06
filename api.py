@@ -14,8 +14,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from generate import generate_answer
-from retrieve import build_hybrid_retriever, load_all_chunks, load_vectorstore, search
+from generate import generate_answer, get_llm
+from retrieve import build_hybrid_retriever, load_all_chunks, load_vectorstore, rewrite_query, search
 
 state = {}
 
@@ -68,7 +68,8 @@ def query(request: QueryRequest):
     if not question:
         raise HTTPException(status_code=400, detail="Question must not be empty.")
 
-    chunks = search(state["retriever"], question)
+    rewritten = rewrite_query(question, get_llm())
+    chunks = search(state["retriever"], question, rewritten_query=rewritten)
     answer = generate_answer(question, chunks)
 
     sources = []
