@@ -1,0 +1,146 @@
+[
+  {
+    "question": "What is the general rule for the period of filing an acknowledgment of service?",
+    "ground_truth": "14 days after service of the claim form.",
+    "source_doc": "DIFC Court Rules",
+    "page": 63
+  },
+  {
+    "question": "What happens to evidence if it is in the possession of a third party?",
+    "ground_truth": "It is not prejudiced.",
+    "source_doc": "UAE Federal AML Law",
+    "page": 9
+  },
+  {
+    "question": "Whether the Personal Data will be used for direct marketing purposes?",
+    "ground_truth": "Yes",
+    "source_doc": "DIFC Data Protection Law",
+    "page": 23
+  },
+  {
+    "question": "What are the mandatory appointments an Authorised Firm must make?",
+    "ground_truth": "An Authorised Firm must make the following appointments: (a) Senior Executive Officer; (b) Finance Officer; (c) Compliance Officer; and (d) Money Laundering Reporting Officer.",
+    "source_doc": "DFSA GEN Appendix 3",
+    "page": 10
+  },
+  {
+    "question": "What should an Authorised Firm consider when evaluating an Employee's fitness and propriety?",
+    "ground_truth": "any training undertaken or required by an Employee, the nature of the Clients to whom an Employee provides Financial Services.",
+    "source_doc": "DFSA GEN Appendix 4",
+    "page": 4
+  },
+  {
+    "question": "What does 'Operating a Local Services Office' mean?",
+    "ground_truth": "Has the meaning given in ASP Rule 2.3.4.",
+    "source_doc": "DFSA GEN Appendix 4",
+    "page": 12
+  },
+  {
+    "question": "What are Crypto Tokens deemed to be under the Current Regime during the Transitional Period?",
+    "ground_truth": "Suitable Crypto Tokens.",
+    "source_doc": "DFSA General Module",
+    "page": 137
+  },
+  {
+    "question": "Under what circumstances can the Court make an order discharging or varying an attachment of earnings order of its own motion?",
+    "ground_truth": "Rules 47.76 to 47.81.",
+    "source_doc": "DIFC Court Rules",
+    "page": 523
+  },
+  {
+    "question": "What enables the DFSA to withdraw a Representative Office's Licence?",
+    "ground_truth": "Article 51",
+    "source_doc": "DFSA GEN Appendix 3",
+    "page": 41
+  },
+  {
+    "question": "What is the topic of this compliance document?",
+    "ground_truth": "Personal Data in emerging technologies.",
+    "source_doc": "DIFC Data Protection Law",
+    "page": 3
+  },
+  {
+    "question": "Where do the determinants for the prudential Category come from?",
+    "ground_truth": "The Financial Services described in the emboldened boxes.",
+    "source_doc": "DFSA GEN Appendix 1",
+    "page": 12
+  },
+  {
+    "question": "What are the conditions under which an Authorised Firm must not approve a Financial Promotion?",
+    "ground_truth": "The Authorised Firm must not approve a Financial Promotion directed at a Retail Client unless it has an endorsement on its License which permits it to carry on a Financial Service with or for a Retail Client.",
+    "source_doc": "DFSA GEN Appendix 2",
+    "page": 7
+  },
+  {
+    "question": "How should a copy of an affidavit or witness statement be marked when copy documents from exhibits have been included in a bundle?",
+    "ground_truth": "In the right hand margin, with a manuscript notation if necessary.",
+    "source_doc": "DIFC Court Rules",
+    "page": 309
+  },
+  {
+    "question": "What is the purpose of using financial assets to back a Fiat Crypto Token?",
+    "ground_truth": "To stabilise its price or reduce volatility in its price.",
+    "source_doc": "DFSA General Module",
+    "page": 184
+  },
+  {
+    "question": "What conditions must be met for a Person to be considered a Controller in a custodian capacity?",
+    "ground_truth": "The Person can only exercise the voting rights attached to the Shares under instructions given in writing.",
+    "source_doc": "DFSA GEN Appendix 3",
+    "page": 20
+  },
+  {
+    "question": "What is the definition of confiscation?",
+    "ground_truth": "Permanent expropriation of private funds or proceeds or instrumentalities by an injunction issued by a competent court.",
+    "source_doc": "UAE Federal AML Law",
+    "page": 1
+  },
+  {
+    "question": "What is the percentage of shares that, over a period of 12 months, would not be considered Exempt Securities under Rule 2.4.1?",
+    "ground_truth": "10 per cent",
+    "source_doc": "DFSA Markets Rules",
+    "page": 15
+  },
+  {
+    "question": "When must a party provide written evidence before a hearing?",
+    "ground_truth": "At least 7 days before the date of the hearing.",
+    "source_doc": "DIFC Court Rules",
+    "page": 165
+  },
+  {
+    "question": "How is the profit or loss of A determined in this contract?",
+    "ground_truth": "The profit or loss of A is determined as 5 times the amount of margin A posted with B to open the position.",
+    "source_doc": "DFSA General Module",
+    "page": 201
+  },
+  {
+    "question": "What must a Controller ensure when the basis for Processing changes or ceases to exist?",
+    "ground_truth": "all Personal Data, including Personal Data held by Processors",
+    "source_doc": "DIFC Data Protection Law",
+    "page": 14
+  },
+  {
+    "question": "What instructions must the Reporting Entity provide to a Person before disclosing information to them?",
+    "ground_truth": "The Reporting Entity must provide a written notice instructing the Person that the information is provided in confidence and must not be used for a purpose other than the purpose for which it is provided.",
+    "source_doc": "DFSA Markets Rules",
+    "page": 71
+  },
+  {
+    "question": "Under what circumstances do Rules 3.4.1 to 3.6.3 not apply to a Person who makes an Offer?",
+    "ground_truth": "An Offer which is in accordance with the requirements relating to an Offer of Securities under the Markets Law 2004 and the OSR.",
+    "source_doc": "DFSA GEN Appendix 2",
+    "page": 3
+  },
+  {
+    "question": "What does Chapter 6 mainly contain guidance in respect of?",
+    "ground_truth": "interpretation of the Rulebook, emergency procedures, disclosure, the location of offices, close links, complaints against the DFSA and the public register.",
+    "source_doc": "DFSA General Module",
+    "page": 5
+  },
+  {
+    "question": "Where can you find Rules and Guidance that address systems and controls in respect of risk?",
+    "ground_truth": "GEN and SUP modules of the Rulebook",
+    "source_doc": "DFSA GEN Appendix 1",
+    "page": 14
+  }
+]

@@ -10,3 +10,5 @@ rank_bm25
 pypdf
 groq
 python-dotenv
+ragas==0.3.0
+pillow
