@@ -10,14 +10,19 @@ Run:
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from generate import generate_answer, get_llm
 from retrieve import build_hybrid_retriever, load_all_chunks, load_vectorstore, rewrite_query, search
 
 state = {}
+
+MAX_QUESTION_LENGTH = 2000
 
 
 @asynccontextmanager
@@ -32,6 +37,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Every /query hit triggers a paid Groq API call, so a public, unprotected
+# endpoint is a real cost/abuse risk, not just a nice-to-have. Per-IP is
+# enough for a portfolio project - not meant to withstand a determined
+# attacker (trivially bypassed by rotating IPs), just casual abuse/loops.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Allow any origin for local development. Narrow this to the real frontend
 # origin(s) before any public deployment.
@@ -63,10 +76,16 @@ def health():
 
 
 @app.post("/query", response_model=QueryResponse)
-def query(request: QueryRequest):
-    question = request.question.strip()
+@limiter.limit("10/minute")
+def query(request: Request, body: QueryRequest):
+    question = body.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="Question must not be empty.")
+    if len(question) > MAX_QUESTION_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Question must be {MAX_QUESTION_LENGTH} characters or fewer.",
+        )
 
     rewritten = rewrite_query(question, get_llm())
     chunks = search(state["retriever"], question, rewritten_query=rewritten)

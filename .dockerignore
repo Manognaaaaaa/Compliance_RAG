@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+.git/
+.env
+Frontend/
+compliance_rag.ipynb
+eval_set.json
+eval_results.csv
+generate_eval_set.py
+evaluate_rag.py
+main.py
+*.pyc
+*.pyo
+# difc_chroma_db/ and difc_chunks.pkl are NOT excluded here on purpose - if
+# they exist locally we still don't want them sent as build context (they're
+# rebuilt fresh by `RUN python ingest.py` inside the image), so keep excluding
+# them explicitly rather than relying on .gitignore alone.
+difc_chroma_db/
+difc_chunks.pkl
