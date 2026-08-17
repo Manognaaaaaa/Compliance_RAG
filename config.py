@@ -45,4 +45,6 @@ CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 RERANK_TOP_N = 5
 
 # Generation
-GROQ_MODEL = "llama-3.1-8b-instant"
+# llama-3.1-8b-instant was deprecated by Groq (404s as of 2026-08-17); switched
+# to the closest available small/fast model.
+GROQ_MODEL = "openai/gpt-oss-20b"
