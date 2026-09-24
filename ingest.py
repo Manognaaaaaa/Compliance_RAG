@@ -1,17 +1,19 @@
-"""Load, chunk, and embed the compliance PDFs into the Chroma vector store.
+"""Load, chunk, and embed the compliance PDFs into the prebuilt index.
 
-Run this module directly to (re)build the vector store from scratch:
+Run this module directly to (re)build the index from scratch:
     python ingest.py
 
-This only needs to be run once (or whenever the source PDFs change) -
-retrieve.py reads the persisted store on every subsequent run.
+This only needs to be run once (or whenever the source PDFs change). The
+output in index/ is committed to git, so the deployed app never ingests -
+it just loads the files. Needs requirements-dev.txt (PDF loading/splitting).
 """
 
-import pickle
+import json
+import os
 
-from langchain_chroma import Chroma
+import numpy as np
+from fastembed import TextEmbedding
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from config import (
@@ -21,7 +23,8 @@ from config import (
     CHUNKS_PATH,
     DOCUMENTS_MAP,
     EMBEDDING_MODEL,
-    PERSIST_DIRECTORY,
+    EMBEDDINGS_PATH,
+    INDEX_DIR,
 )
 
 
@@ -50,28 +53,35 @@ def load_and_chunk(documents_map=DOCUMENTS_MAP):
 
 
 def save_chunks(chunks, path=CHUNKS_PATH):
-    """Persist the chunk corpus so retrieve.py can build a BM25 index from it
-    without pulling tens of thousands of rows back out of Chroma."""
-    with open(path, "wb") as f:
-        pickle.dump(chunks, f)
+    """Persist the chunk text + citation metadata (used for BM25 and for
+    mapping semantic-search rows back to documents)."""
+    records = [
+        {
+            "text": chunk.page_content,
+            "source_doc": chunk.metadata["source_doc"],
+            "page": chunk.metadata.get("page", -1),
+        }
+        for chunk in chunks
+    ]
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(records, f, ensure_ascii=False)
 
 
-def build_vectorstore(chunks, persist_directory=PERSIST_DIRECTORY):
-    """Embed chunks and persist them to a Chroma vector store."""
-    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory=persist_directory,
-    )
-    print("All documents embedded and stored.")
-    return vectorstore
+def build_embeddings(chunks, path=EMBEDDINGS_PATH):
+    """Embed every chunk and save the L2-normalized matrix, so a dot product
+    at query time is cosine similarity. Row i matches chunk i in chunks.json."""
+    model = TextEmbedding(model_name=EMBEDDING_MODEL)
+    vectors = np.array(list(model.embed([c.page_content for c in chunks], batch_size=64)), dtype=np.float32)
+    vectors /= np.linalg.norm(vectors, axis=1, keepdims=True)
+    np.save(path, vectors)
+    print(f"Embedded {len(vectors)} chunks -> {path}")
 
 
 def main():
+    os.makedirs(INDEX_DIR, exist_ok=True)
     chunks = load_and_chunk()
     save_chunks(chunks)
-    build_vectorstore(chunks)
+    build_embeddings(chunks)
 
 
 if __name__ == "__main__":

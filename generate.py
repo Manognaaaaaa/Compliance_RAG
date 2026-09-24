@@ -3,11 +3,15 @@
 from functools import lru_cache
 
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from groq import Groq
 
 from config import GROQ_MODEL
 
 load_dotenv()
+
+# ChatGroq's default, kept so answers read the same as before the switch to
+# the plain groq SDK.
+TEMPERATURE = 0.7
 
 PROMPT_TEMPLATE = """You are a compliance assistant for DIFC regulations.
 Answer the question using ONLY the context below.
@@ -27,8 +31,18 @@ Question: {query}
 
 
 @lru_cache(maxsize=1)
-def get_llm():
-    return ChatGroq(model_name=GROQ_MODEL)
+def get_client():
+    return Groq()  # reads GROQ_API_KEY from the environment
+
+
+def complete(prompt):
+    """Single-turn LLM call; returns the response text."""
+    response = get_client().chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=TEMPERATURE,
+    )
+    return response.choices[0].message.content
 
 
 def build_prompt(query, chunks):
@@ -40,8 +54,5 @@ def build_prompt(query, chunks):
     return PROMPT_TEMPLATE.format(context=context, query=query)
 
 
-def generate_answer(query, chunks, llm=None):
-    llm = llm or get_llm()
-    prompt = build_prompt(query, chunks)
-    response = llm.invoke(prompt)
-    return response.content
+def generate_answer(query, chunks):
+    return complete(build_prompt(query, chunks))

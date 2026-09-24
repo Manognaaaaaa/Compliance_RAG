@@ -17,7 +17,7 @@ import types
 # langchain_community.chat_models.vertexai, a module langchain-community
 # removed in favor of the standalone langchain-google-vertexai package. This
 # project uses Groq, not Vertex AI, so stub out the missing submodule rather
-# than downgrade langchain-community (which ingest.py/retrieve.py depend on)
+# than downgrade langchain-community (which ingest.py depends on)
 # or pull in an unused Vertex AI dependency.
 _vertexai_stub = types.ModuleType("langchain_community.chat_models.vertexai")
 
@@ -51,15 +51,12 @@ from ragas.metrics import (  # noqa: E402
 )
 from ragas.run_config import RunConfig  # noqa: E402
 
-from generate import build_prompt, get_llm  # noqa: E402
-from retrieve import (  # noqa: E402
-    build_hybrid_retriever,
-    get_embeddings,
-    load_all_chunks,
-    load_vectorstore,
-    rewrite_query,
-    search,
-)
+from langchain_groq import ChatGroq  # noqa: E402
+from langchain_huggingface import HuggingFaceEmbeddings  # noqa: E402
+
+from config import EMBEDDING_MODEL, GROQ_MODEL  # noqa: E402
+from generate import build_prompt, complete  # noqa: E402
+from retrieve import build_hybrid_retriever, rewrite_query, search  # noqa: E402
 
 EVAL_SET_PATH = "eval_set.json"
 RESULTS_CSV_PATH = "eval_results.csv"
@@ -80,22 +77,19 @@ RUN_CONFIG = RunConfig(max_workers=2, max_retries=15, max_wait=90)
 
 def run_pipeline(retriever, query):
     """Run the existing retrieval + generation pipeline for one question."""
-    rewritten = rewrite_query(query, get_llm())
+    rewritten = rewrite_query(query)
     top_chunks = search(retriever, query, rewritten_query=rewritten)
-    prompt = build_prompt(query, top_chunks)
-    response = get_llm().invoke(prompt)
+    answer = complete(build_prompt(query, top_chunks))
     contexts = [doc.page_content for doc in top_chunks]
-    return response.content, contexts
+    return answer, contexts
 
 
 def main():
     with open(EVAL_SET_PATH, encoding="utf-8") as f:
         eval_set = json.load(f)
 
-    print("Loading vector store and retrievers...")
-    vectorstore = load_vectorstore()
-    all_chunks = load_all_chunks()
-    retriever = build_hybrid_retriever(vectorstore, all_chunks)
+    print("Loading index and retrievers...")
+    retriever = build_hybrid_retriever()
 
     samples = []
     for i, item in enumerate(eval_set, 1):
@@ -112,8 +106,10 @@ def main():
 
     dataset = EvaluationDataset.from_list(samples)
 
-    ragas_llm = LangchainLLMWrapper(get_llm())
-    ragas_embeddings = LangchainEmbeddingsWrapper(get_embeddings())
+    # RAGAS needs LangChain-wrapped models for scoring. These are dev-only
+    # dependencies (requirements-dev.txt), separate from the serving path.
+    ragas_llm = LangchainLLMWrapper(ChatGroq(model_name=GROQ_MODEL))
+    ragas_embeddings = LangchainEmbeddingsWrapper(HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL))
 
     print("\nRunning RAGAS evaluation...")
     result = evaluate(

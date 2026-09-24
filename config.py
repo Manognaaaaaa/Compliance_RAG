@@ -18,13 +18,17 @@ CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
 CHUNK_SEPARATORS = ["\nArticle", "\nSection", "\n\n", "\n"]
 
-# Vector store
-PERSIST_DIRECTORY = "./difc_chroma_db"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# Prebuilt index (written by ingest.py, committed to git, read at serve time).
+# Plain JSON + a NumPy matrix instead of Chroma: the serving path has to fit
+# in a Vercel Function (500MB bundle), which rules out Chroma/torch. At this
+# corpus size, exact brute-force cosine search over the matrix is a few ms.
+INDEX_DIR = "./index"
+CHUNKS_PATH = "./index/chunks.json"
+EMBEDDINGS_PATH = "./index/embeddings.npy"
 
-# Chunk corpus, persisted separately for BM25 (Chroma's SQLite backend chokes
-# on pulling back tens of thousands of rows via a single .get() call)
-CHUNKS_PATH = "./difc_chunks.pkl"
+# Same models as before, run as ONNX via fastembed instead of torch via
+# sentence-transformers.
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Hybrid retrieval
 # Bumped from 20: on a vocabulary-mismatch query ("filing" vs the DFSA's
@@ -41,7 +45,8 @@ RETRIEVER_K = 40
 ENSEMBLE_WEIGHTS = [0.3, 0.7]
 
 # Reranking
-CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+# fastembed's ONNX export of cross-encoder/ms-marco-MiniLM-L-6-v2
+CROSS_ENCODER_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RERANK_TOP_N = 5
 
 # Generation

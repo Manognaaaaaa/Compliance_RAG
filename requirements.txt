@@ -1,17 +1,11 @@
-langchain
-langchain-classic
-langchain-community
-langchain-groq
-langchain-huggingface
-langchain-chroma
-chromadb
-sentence-transformers
-rank_bm25
-pypdf
-groq
-python-dotenv
-ragas==0.3.0
-pillow
-fastapi
-uvicorn[standard]
-slowapi
+# Runtime (serving) dependencies only - this is what Vercel installs, and it
+# has to stay under the 500MB function bundle limit. No torch/Chroma/LangChain.
+# Keep in sync with [project].dependencies in pyproject.toml.
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+slowapi==0.1.10
+groq==1.7.0
+python-dotenv==1.2.3
+numpy==2.5.3
+rank-bm25==0.2.2
+fastembed==0.8.1

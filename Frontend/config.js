@@ -1,4 +1,4 @@
-// The only environment-specific value in the frontend. Swap this for the
-// production API URL when hosting - everything else references it rather
-// than hardcoding a URL.
-export const API_BASE_URL = "http://localhost:8000";
+// The frontend is served by the same FastAPI app as the API (locally and on
+// Vercel), so a relative path works everywhere. Only change this if the
+// frontend is hosted separately from the backend.
+export const API_BASE_URL = "/api";

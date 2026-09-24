@@ -10,6 +10,7 @@ A Retrieval-Augmented Generation (RAG) assistant for querying DIFC/DFSA complian
 - [Prerequisites](#prerequisites)
 - [Setup](#setup)
 - [Usage](#usage)
+- [Deploy to Vercel](#deploy-to-vercel)
 - [API reference](#api-reference)
 - [Evaluation](#evaluation)
 - [Project structure](#project-structure)
@@ -18,7 +19,7 @@ A Retrieval-Augmented Generation (RAG) assistant for querying DIFC/DFSA complian
 ## How it works
 
 1. Loads a set of regulatory PDFs and splits them into overlapping text chunks.
-2. Embeds each chunk and stores it in a local [ChromaDB](https://www.trychroma.com/) vector store.
+2. Embeds each chunk and saves the chunks (`index/chunks.json`) and a normalized embedding matrix (`index/embeddings.npy`). This prebuilt index is committed, so the deployed app only loads it.
 3. On a query, first **rewrites the question into the regulator's likely vocabulary** with one LLM call (e.g. "filing" → "submission"/"notification") — the DFSA General Module never uses the word "filing" at all, so this step matters for real questions, not just an edge case.
 4. Retrieves relevant chunks using **hybrid search** — BM25 keyword search combined with semantic (embedding) search, merged via `EnsembleRetriever`, run on both the original and rewritten query — then reranks the merged candidates with a cross-encoder.
 5. Builds a prompt from the top chunks and sends it to a Groq-hosted LLM, which returns **one coherent answer** (not a bullet dump of every retrieved passage) with inline citations to document name and page.
@@ -41,25 +42,27 @@ To point this at a different set of documents, edit `DOCUMENTS_MAP` in [`config.
 
 | Layer | Technology |
 |---|---|
-| Orchestration | [LangChain](https://www.langchain.com/) (`langchain`, `langchain-classic`, `langchain-community`) |
-| Embeddings | `sentence-transformers/all-MiniLM-L6-v2` via `langchain-huggingface` |
-| Vector store | [ChromaDB](https://www.trychroma.com/) via `langchain-chroma` |
-| Keyword retrieval | BM25 (`rank_bm25`), combined with semantic search via `EnsembleRetriever` |
-| Reranking | Cross-encoder (`cross-encoder/ms-marco-MiniLM-L-6-v2`) |
-| LLM | [Groq](https://groq.com/) via `langchain-groq` — query rewriting and answer generation |
-| PDF loading | PyPDF |
-| API | FastAPI + Uvicorn (`api.py`), rate-limited with `slowapi` |
+| Embeddings | `sentence-transformers/all-MiniLM-L6-v2`, run as ONNX via [fastembed](https://github.com/qdrant/fastembed) (no torch) |
+| Vector search | Exact cosine similarity over a NumPy matrix (5.4k chunks, a few ms) |
+| Keyword retrieval | BM25 (`rank_bm25`), fused with semantic search via weighted reciprocal rank fusion |
+| Reranking | Cross-encoder `ms-marco-MiniLM-L-6-v2`, ONNX via fastembed |
+| LLM | [Groq](https://groq.com/) via the `groq` SDK — query rewriting and answer generation |
+| PDF loading / chunking | PyPDF + LangChain text splitters (index build only, `requirements-dev.txt`) |
+| API | FastAPI + Uvicorn (`api.py`), rate-limited with `slowapi`; also serves the frontend |
 | Frontend | Vanilla HTML/CSS/JS (`Frontend/`) — no build step, no framework |
 | Evaluation | [RAGAS](https://docs.ragas.io/) |
-| Packaging | Docker — see [Run the backend in Docker](#4-run-the-backend-in-docker-optional) |
+| Hosting | [Vercel](https://vercel.com/) (single Python function) — Docker also supported |
+
+**Why no torch/Chroma?** The serving path has to fit in a Vercel Function (500MB bundle). `torch` alone is over that, so both models run as ONNX through `fastembed` (same models, same retrieval results — verified against the old torch/Chroma pipeline) and Chroma is replaced by a plain NumPy matrix. The runtime dependencies total ~170MB.
 
 The LLM model is set in [`config.py`](config.py) (`GROQ_MODEL`) — Groq periodically retires models, so if you see a `model_not_found` error, that's the first thing to check against [Groq's current model list](https://console.groq.com/docs/models).
 
 ## Prerequisites
 
-- **Python 3.11+** (the Docker image pins exactly `3.11-slim` for reliable prebuilt-wheel availability of `torch`/`sentence-transformers`; local development works fine on newer versions too).
+- **Python 3.11+** (Vercel runs 3.12).
 - **A [Groq API key](https://console.groq.com/keys)** (free tier available) — required for query rewriting and answer generation.
-- **Docker** (optional) — only needed if you want to run the backend containerized instead of directly with `uvicorn`.
+- **A [Vercel](https://vercel.com/) account** (free Hobby plan) — only for deploying.
+- **Docker** (optional) — only if you want to run the app containerized.
 
 ## Setup
 
@@ -72,8 +75,9 @@ source .venv/bin/activate   # macOS/Linux
 
 **2. Install dependencies**
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
+`requirements.txt` is the light runtime set (what Vercel installs); `requirements-dev.txt` adds what's needed to rebuild the index and run the evaluation.
 
 **3. Add your Groq API key**
 
@@ -88,7 +92,7 @@ GROQ_API_KEY=your_groq_api_key_here
 ```bash
 python ingest.py
 ```
-This loads all PDFs, chunks them, persists the chunk corpus to `difc_chunks.pkl` (used for BM25), and embeds + persists the vector store to `difc_chroma_db/`. Both are gitignored — nothing large ever needs to go through git.
+This loads all PDFs, chunks them, and writes `index/chunks.json` (chunk text + citation metadata, also used for BM25) and `index/embeddings.npy` (~10MB total). Commit the `index/` folder — the deployed app reads it and never ingests. The repo already includes a built index, so you only need this after changing the PDFs or chunking settings.
 
 ### 2. Ask questions via the CLI
 ```bash
@@ -97,31 +101,18 @@ python main.py "What are the filing requirements under the DFSA General Module?"
 Or run `python main.py` with no arguments for an interactive prompt loop.
 
 ### 3. Run the API + web UI
-
-Backend:
 ```bash
 uvicorn api:app --reload --port 8000
 ```
-Loads the vector store and hybrid retriever once at startup (not per-request). Exposes `GET /health` and `POST /query` — see [API reference](#api-reference) below.
+Open `http://localhost:8000`. The same FastAPI app serves the frontend at `/` and the API under `/api`, so there's no separate frontend server and no CORS setup. The index and models load on the first question (a few seconds), then stay cached.
 
-Frontend (separate terminal, must be served — don't open `index.html` via `file://`, `fetch()`/CORS behave differently):
-```bash
-cd Frontend
-python -m http.server 5500
-```
-Open `http://localhost:5500`. `Frontend/config.js` sets `API_BASE_URL`; that's the only environment-specific value in the frontend — point it at a different backend by changing that one line.
-
-### 4. Run the backend in Docker (optional)
+### 4. Run in Docker (optional)
 
 ```bash
-docker build -t compliance-rag-api .
-docker run -d --name compliance-rag-api -p 8000:8000 --env-file .env compliance-rag-api
+docker build -t compliance-rag .
+docker run -d --name compliance-rag -p 8000:8000 --env-file .env compliance-rag
 ```
-The image builds the vector store itself during `docker build` (a `RUN python ingest.py` step embeds all PDFs into the image) rather than copying a pre-built store from disk — so the image is fully self-contained and there's nothing to prepare beforehand. Expect the build to take several minutes the first time (installing `torch`/`transformers`, then embedding every document).
-
-Same `/health` and `/query` contract as running `uvicorn` directly — the frontend doesn't need to know which one it's talking to. `GROQ_API_KEY` is injected at `docker run` time via `--env-file`, never baked into the image. `docker logs compliance-rag-api` should show `Loading vector store and retrievers...` then `Ready.` on startup.
-
-> **Note on hosting:** this app's dependencies (`torch` + `sentence-transformers` + a Chroma vector store) need meaningfully more than 512MB RAM to run — free tiers on hosts like Render will likely fail with an out-of-memory error. Budget for a host/tier with at least 1-2GB RAM if deploying publicly.
+The image uses the committed `index/` (no ingestion step) and pre-downloads the ONNX models during the build. `GROQ_API_KEY` is injected at `docker run` time via `--env-file`, never baked into the image.
 
 ### 5. Evaluate answer quality (optional)
 ```bash
@@ -130,21 +121,28 @@ python evaluate_rag.py        # runs each question through the real pipeline, sc
 ```
 `faithfulness` and `context_recall` make several sequential LLM calls per question and can be rate-limited on a free-tier Groq key — see the comments in `evaluate_rag.py` if you see `NaN` scores.
 
-### 6. Explore interactively (optional)
+## Deploy to Vercel
 
-Open `compliance_rag.ipynb` for step-by-step exploration of ingestion, retrieval, and generation — it imports the same functions as `main.py` rather than duplicating logic. It's a scratchpad for demos, not the entry point.
+The whole app (frontend + API) deploys as one Vercel project on the free Hobby plan.
+
+1. Push the repo to GitHub, including the `index/` folder.
+2. On [vercel.com](https://vercel.com/new), **Add New → Project** and import the repo. Leave **Root Directory** as the repo root and the **Framework Preset** as detected (FastAPI) — no build command needed.
+3. Under **Environment Variables**, add `GROQ_API_KEY`.
+4. Deploy, then open the project URL.
+
+How it's wired: `pyproject.toml` points Vercel at `api:app` (`[tool.vercel] entrypoint`), Vercel installs only the light runtime deps, and `vercel.json` excludes the PDFs and dev scripts from the function bundle. The ONNX models (~180MB) download from Hugging Face into `/tmp` on each cold start, so the first question after a period of inactivity takes noticeably longer (~10–20s); warm requests are just the Groq round-trips.
 
 ## API reference
 
 | Endpoint | Method | Request body | Response |
 |---|---|---|---|
-| `/health` | `GET` | — | `{"status": "ok"}` |
-| `/query` | `POST` | `{"question": string}` | `{"answer": string, "sources": [{"doc": string, "page": int}]}` |
+| `/api/health` | `GET` | — | `{"status": "ok"}` |
+| `/api/query` | `POST` | `{"question": string}` | `{"answer": string, "sources": [{"doc": string, "page": int}]}` |
 
 Notes:
 - `question` is capped at 2000 characters — longer requests get a `400`.
-- `/query` is rate-limited to **10 requests/minute per IP** (via `slowapi`) — each call triggers a paid Groq API call, so this guards against runaway cost from an unprotected public endpoint. Exceeding it returns a `429`.
-- CORS currently allows all origins (`allow_origins=["*"]`) — narrow this in `api.py` before hosting the frontend on a fixed domain.
+- `/api/query` is rate-limited to **10 requests/minute per IP** (via `slowapi`) — each call triggers a paid Groq API call, so this guards against runaway cost from an unprotected public endpoint. Exceeding it returns a `429`. The counter is in-memory, so on Vercel each warm instance counts separately — fine for casual abuse, not a hard guarantee.
+- The bundled frontend is same-origin, so CORS doesn't matter for it. If a frontend on another domain calls the API, set `ALLOWED_ORIGINS` (comma-separated) — it defaults to allowing any origin.
 
 ## Evaluation
 
@@ -164,34 +162,34 @@ Baseline RAGAS scores (24 sampled questions, before the query-rewrite/reranking-
 ```
 .
 ├── config.py                # Shared constants (models, paths, chunking/retrieval params)
-├── ingest.py                # Load PDFs -> chunk -> embed -> persist to Chroma
+├── ingest.py                # Load PDFs -> chunk -> embed -> write index/
 ├── retrieve.py              # Query rewrite + hybrid (BM25 + semantic) retrieval + cross-encoder reranking
 ├── generate.py              # Prompt construction + Groq LLM call
 ├── main.py                  # CLI wiring retrieve.py + generate.py together
-├── api.py                   # FastAPI backend (GET /health, POST /query)
-├── Frontend/                # Static HTML/CSS/JS web UI (served separately, no build step)
+├── api.py                   # FastAPI app: /api/health, /api/query, and the frontend at /
+├── index/                   # Prebuilt index (committed): chunks.json + embeddings.npy
+├── Frontend/                # Static HTML/CSS/JS web UI (served by api.py, no build step)
 │   ├── index.html
 │   ├── style.css
 │   ├── app.js
-│   └── config.js            # API_BASE_URL - the only environment-specific value
+│   └── config.js            # API_BASE_URL (relative "/api")
 ├── generate_eval_set.py     # Samples chunks, generates a RAGAS eval set -> eval_set.json
 ├── evaluate_rag.py          # Runs the real pipeline against eval_set.json, scores with RAGAS
-├── Dockerfile                # Containerized backend - builds the vector store during `docker build`
-├── .dockerignore             # Excludes notebook, eval scripts, .env, Frontend/, etc. (PDFs are NOT excluded - the image needs them to build the vector store)
-├── compliance_rag.ipynb      # Exploration / demo notebook (not the entry point)
-├── requirements.txt          # Python dependencies
-├── .env                      # GROQ_API_KEY (not committed)
-├── difc_chroma_db/           # Persisted vector store (not committed - built by ingest.py)
-├── difc_chunks.pkl           # Persisted chunk corpus for BM25 (not committed - built by ingest.py)
-├── eval_set.json             # Generated Q&A evaluation set
-├── eval_results.csv          # Per-question RAGAS scores from the last eval run
-└── *.pdf                     # Source regulatory documents
+├── requirements.txt         # Runtime deps (what Vercel installs)
+├── requirements-dev.txt     # + index building and evaluation deps
+├── pyproject.toml           # Vercel entrypoint (api:app) + runtime deps
+├── vercel.json              # Function config: timeout, files excluded from the bundle
+├── Dockerfile               # Optional container image
+├── .env                     # GROQ_API_KEY (not committed)
+├── eval_set.json            # Generated Q&A evaluation set
+├── eval_results.csv         # Per-question RAGAS scores from the last eval run
+└── *.pdf                    # Source regulatory documents
 ```
 
 ## Troubleshooting
 
 - **`groq.NotFoundError: model_not_found`** — Groq has retired the model set in `GROQ_MODEL` (`config.py`). Pick a currently available one from [Groq's model list](https://console.groq.com/docs/models) and update `config.py`.
 - **`NaN` scores from `evaluate_rag.py`** — usually Groq rate-limiting during the eval run, not a bug in the pipeline. See the comments at the top of `evaluate_rag.py`.
-- **Frontend requests fail with a CORS or network error** — make sure the frontend is served over HTTP (`python -m http.server`), not opened directly as a `file://` URL, and that `Frontend/config.js`'s `API_BASE_URL` points at a running backend.
+- **Frontend shows "Something went wrong"** — open the app through `uvicorn` (`http://localhost:8000`), not by double-clicking `index.html`. On Vercel, check the function logs and that `GROQ_API_KEY` is set.
 - **`huggingface_hub` symlink warning on Windows** — harmless; it's a caching optimization Windows blocks without Developer Mode enabled. Everything still works, just with slightly more disk use for cached model files.
-- **Docker build runs out of memory on a hosting platform** — see the [note on hosting](#4-run-the-backend-in-docker-optional) above; this app needs more RAM than most free hosting tiers provide.
+- **Slow first answer on Vercel** — a cold start downloads the two ONNX models into `/tmp`. Expected; later requests on the same instance are fast.

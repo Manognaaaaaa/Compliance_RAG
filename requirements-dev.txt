@@ -1,0 +1,11 @@
+# Everything needed locally on top of the runtime deps: rebuilding the index
+# (ingest.py) and running the RAGAS evaluation (generate_eval_set.py,
+# evaluate_rag.py). Never installed on Vercel.
+-r requirements.txt
+langchain-community
+langchain-text-splitters
+pypdf
+langchain-groq
+langchain-huggingface
+sentence-transformers
+ragas==0.3.0

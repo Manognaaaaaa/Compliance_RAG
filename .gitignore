@@ -2,7 +2,10 @@
 .venv/
 __pycache__/
 *.pyc
-difc_chroma_db/
-difc_chunks.pkl
 *.log
 .claude/settings.local.json
+.vercel
+# Old Chroma/pickle index from before the switch to index/ - index/ itself
+# IS committed, since the deployed app loads it instead of ingesting.
+difc_chroma_db/
+difc_chunks.pkl

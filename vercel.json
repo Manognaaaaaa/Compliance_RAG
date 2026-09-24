@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{*.pdf,eval_set.json,eval_results.csv,evaluate_rag.py,generate_eval_set.py,ingest.py,main.py,Dockerfile,README.md,.venv/**}"
+    }
+  }
+}

@@ -11,7 +11,7 @@ Run standalone:
 import json
 import random
 
-from generate import get_llm
+from generate import complete
 from ingest import load_and_chunk
 
 SAMPLE_SIZE = 25
@@ -57,10 +57,9 @@ def parse_llm_json(text):
     return json.loads(text[start : end + 1])
 
 
-def generate_question_answer(llm, chunk):
+def generate_question_answer(chunk):
     prompt = GEN_PROMPT.format(passage=chunk.page_content)
-    response = llm.invoke(prompt)
-    data = parse_llm_json(response.content)
+    data = parse_llm_json(complete(prompt))
     return data["question"], data["answer"]
 
 
@@ -71,14 +70,13 @@ def main():
     print(f"Sampling {SAMPLE_SIZE} chunks across all documents...")
     sampled = sample_chunks(chunks, SAMPLE_SIZE)
 
-    llm = get_llm()
     eval_set = []
     for i, chunk in enumerate(sampled, 1):
         doc_name = chunk.metadata.get("source_doc", "Unknown")
         page = chunk.metadata.get("page", "N/A")
         print(f"[{i}/{len(sampled)}] Generating Q&A from {doc_name} | Page {page}...")
         try:
-            question, answer = generate_question_answer(llm, chunk)
+            question, answer = generate_question_answer(chunk)
         except (json.JSONDecodeError, KeyError) as e:
             print(f"  -> skipped (could not parse LLM output: {e})")
             continue

@@ -1,0 +1,20 @@
+[project]
+name = "compliance-rag"
+version = "0.1.0"
+requires-python = ">=3.11"
+# Keep in sync with requirements.txt.
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn[standard]==0.53.0",
+    "slowapi==0.1.10",
+    "groq==1.7.0",
+    "python-dotenv==1.2.3",
+    "numpy==2.5.3",
+    "rank-bm25==0.2.2",
+    "fastembed==0.8.1",
+]
+
+[tool.vercel]
+# Explicit, because main.py (the CLI) is also one of the filenames Vercel
+# auto-detects as an entrypoint.
+entrypoint = "api:app"
