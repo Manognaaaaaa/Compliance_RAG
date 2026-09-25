@@ -10,15 +10,24 @@ reciprocal rank fusion, whitespace-tokenized BM25).
 """
 
 import json
+import os
 from dataclasses import dataclass, field
 from functools import lru_cache
 
-import numpy as np
-from fastembed import TextEmbedding
-from fastembed.rerank.cross_encoder import TextCrossEncoder
-from rank_bm25 import BM25Okapi
+# On Vercel only /tmp is writable. huggingface_hub's Xet download backend
+# writes its cache/logs under ~/.cache/huggingface regardless of fastembed's
+# cache dir, which crashes the model download with "Read-only file system".
+# Must be set before huggingface_hub is imported (it reads these at import).
+if os.getenv("VERCEL"):
+    os.environ.setdefault("HF_HOME", "/tmp/huggingface")
+    os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
-from config import (
+import numpy as np  # noqa: E402
+from fastembed import TextEmbedding  # noqa: E402
+from fastembed.rerank.cross_encoder import TextCrossEncoder  # noqa: E402
+from rank_bm25 import BM25Okapi  # noqa: E402
+
+from config import (  # noqa: E402
     CHUNKS_PATH,
     CROSS_ENCODER_MODEL,
     EMBEDDING_MODEL,
@@ -27,7 +36,7 @@ from config import (
     RERANK_TOP_N,
     RETRIEVER_K,
 )
-from generate import complete
+from generate import complete  # noqa: E402
 
 # Reciprocal rank fusion constant - same default LangChain's EnsembleRetriever used.
 RRF_C = 60
