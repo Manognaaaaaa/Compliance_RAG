@@ -59,7 +59,10 @@ def save_chunks(chunks, path=CHUNKS_PATH):
         {
             "text": chunk.page_content,
             "source_doc": chunk.metadata["source_doc"],
-            "page": chunk.metadata.get("page", -1),
+            # PyPDFLoader's "page" is a 0-based index; store the 1-based page
+            # number a reader sees in their PDF viewer, since it's what
+            # citations show.
+            "page": chunk.metadata["page"] + 1,
         }
         for chunk in chunks
     ]

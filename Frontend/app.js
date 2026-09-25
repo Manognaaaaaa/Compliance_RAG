@@ -36,6 +36,22 @@ function createUserRow(msg) {
 
 const NO_ANSWER_PATTERN = /i don't have enough information/i;
 
+// The LLM marks emphasis with Markdown **bold**. Render just that, building
+// <strong> nodes directly rather than via innerHTML, so model output can
+// never inject markup.
+function appendFormatted(el, text) {
+  text.split(/\*\*(.+?)\*\*/gs).forEach((part, i) => {
+    if (!part) return;
+    if (i % 2 === 1) {
+      const strong = document.createElement("strong");
+      strong.textContent = part;
+      el.appendChild(strong);
+    } else {
+      el.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
 function createAssistantRow(msg) {
   const row = document.createElement("div");
   row.className = "msg-row assistant";
@@ -46,7 +62,7 @@ function createAssistantRow(msg) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble assistant" + (msg.isError ? " error" : "");
-  bubble.textContent = msg.text;
+  appendFormatted(bubble, msg.text);
   column.appendChild(bubble);
 
   const isNoAnswer = NO_ANSWER_PATTERN.test(msg.text);
