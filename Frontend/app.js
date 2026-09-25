@@ -72,7 +72,7 @@ function createAssistantRow(msg) {
     for (const source of msg.sources) {
       const chip = document.createElement("span");
       chip.className = "source-chip";
-      chip.textContent = `${source.doc} — p. ${source.page}`;
+      chip.textContent = `${source.doc}, p. ${source.page}`;
       sourcesRow.appendChild(chip);
     }
     column.appendChild(sourcesRow);
@@ -159,7 +159,7 @@ async function sendMessage(text) {
   } catch (err) {
     state.messages.push({
       role: "assistant",
-      text: "Something went wrong — try again.",
+      text: "Couldn't get an answer. Please try again.",
       isError: true,
     });
   } finally {

@@ -2,25 +2,30 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Compliance Assistant</title>
+<meta name="description" content="Ask questions about DIFC and DFSA regulations and get answers cited to the exact rulebook page.">
+<meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231E3A8A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v18M5 7l-3 6a4 4 0 0 0 8 0l-3-6M19 7l-3 6a4 4 0 0 0 8 0l-3-6M5 7h14M5 7l7-4 7 4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="page">
-  <div class="shell">
+  <main class="shell">
     <div class="top-spacer"></div>
 
     <div id="conversation" class="conversation" hidden></div>
 
     <div id="empty-state" class="empty-state">
       <div class="empty-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C6A75E" stroke-width="1.5"><path d="M12 3v18M5 7l-3 6a4 4 0 0 0 8 0l-3-6M19 7l-3 6a4 4 0 0 0 8 0l-3-6M5 7h14M5 7l7-4 7 4"/></svg>
+        <svg aria-hidden="true" focusable="false" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" stroke-width="1.5"><path d="M12 3v18M5 7l-3 6a4 4 0 0 0 8 0l-3-6M19 7l-3 6a4 4 0 0 0 8 0l-3-6M5 7h14M5 7l7-4 7 4"/></svg>
       </div>
-      <div class="headline">Ask about policy, precedent, or procedure.</div>
+      <h1 class="headline">Ask about policy, precedent, or procedure.</h1>
 
       <div class="starter-grid">
         <button type="button" class="starter-card"><span class="starter-card-text">What are the DFSA's marketing rules for financial promotions in 2024-25?</span></button>
@@ -32,15 +37,15 @@
 
     <div class="input-bar-wrap">
       <div class="input-bar">
-        <textarea id="input" class="input-textarea" rows="1" placeholder="Ask a compliance question…"></textarea>
+        <textarea id="input" class="input-textarea" rows="1" placeholder="Ask a compliance question…" aria-label="Compliance question"></textarea>
         <button id="send-btn" class="send-button" type="button" disabled aria-label="Send">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#241811" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
       </div>
-      <div class="disclaimer">Compliance Assistant provides informational guidance only and does not constitute legal advice. Verify all determinations with counsel.</div>
+      <p class="disclaimer">Compliance Assistant provides informational guidance only and does not constitute legal advice. Verify all determinations with counsel.</p>
     </div>
 
-  </div>
+  </main>
 </div>
 
 <script type="module" src="app.js"></script>
