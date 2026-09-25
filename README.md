@@ -2,6 +2,8 @@
 
 A Retrieval-Augmented Generation (RAG) assistant for querying DIFC/DFSA compliance and regulatory documents in plain English. Ask a question — via the CLI, the API, or the web UI — and it retrieves the most relevant passages from the source PDFs and has an LLM answer using only that context, with citations back to the exact document and page.
 
+**Live demo: [compliance-rag-inky.vercel.app](https://compliance-rag-inky.vercel.app/)** — the first question after a period of inactivity takes ~10–20s while the models load; later ones are faster.
+
 ## Contents
 
 - [How it works](#how-it-works)
@@ -123,7 +125,7 @@ python evaluate_rag.py        # runs each question through the real pipeline, sc
 
 ## Deploy to Vercel
 
-The whole app (frontend + API) deploys as one Vercel project on the free Hobby plan.
+The whole app (frontend + API) deploys as one Vercel project on the free Hobby plan. It's live at **https://compliance-rag-inky.vercel.app/**.
 
 1. Push the repo to GitHub, including the `index/` folder.
 2. On [vercel.com](https://vercel.com/new), **Add New → Project** and import the repo. Leave **Root Directory** as the repo root and the **Framework Preset** as detected (FastAPI) — no build command needed.
